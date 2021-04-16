@@ -106,6 +106,8 @@ private slots:
 
     void on_load_clicked();
 
+    void on_exportToCpp_clicked();
+
 private:
     Ui::TouchpadTuner *ui;
 };

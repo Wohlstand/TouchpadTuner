@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QtDebug>
 #include <QGraphicsSceneMouseEvent>
+#include <QMessageBox>
 #include "edit_scene.h"
 
 TouchpadTuner::TouchpadTuner(QWidget *parent)
@@ -319,4 +320,50 @@ void TouchpadTuner::on_load_clicked()
 
     initScene();
     m_lastFile = o;
+}
+
+void TouchpadTuner::on_exportToCpp_clicked()
+{
+    QString clName = "TouchScreenController";
+    QStringList keyNames =
+    {
+        "key_start",
+        "key_left",
+        "key_right",
+        "key_up",
+        "key_down",
+        "key_upleft",
+        "key_upright",
+        "key_downleft",
+        "key_downright",
+        "key_run",
+        "key_jump",
+        "key_altrun",
+        "key_altjump",
+        "key_drop",
+        "key_holdRun",
+        "key_toggleKeysView",
+    };
+
+    QString output;
+
+    output +=
+            "{\n"
+            "    /* Note that order of keys must match the TouchScreenController::commands enum!!! */\n";
+
+    for(int i = key_BEGIN; i < key_END; ++i)
+    {
+        auto &s = touchKeysMap[i];
+        output += QString("    {%1.0f, %2.0f, %3.0f, %4.0f, %5:%6},\n")
+                .arg(s.x1)
+                .arg(s.y1)
+                .arg(s.x2)
+                .arg(s.y2)
+                .arg(clName)
+                .arg(keyNames[i]);
+    }
+
+    output += "};";
+
+    QMessageBox::information(this, "Exported array", output);
 }

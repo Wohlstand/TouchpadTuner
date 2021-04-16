@@ -1,16 +1,28 @@
 #include "touchpad_tuner.h"
 #include "ui_touchpad_tuner.h"
 #include <QGraphicsRectItem>
+#include <QFileDialog>
+#include <QSettings>
+#include <QtDebug>
+#include <QGraphicsSceneMouseEvent>
+#include "edit_scene.h"
 
 TouchpadTuner::TouchpadTuner(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::TouchpadTuner)
 {
     ui->setupUi(this);
-    m_scene = new QGraphicsScene(ui->graphicsView);
+    m_scene = new EditScene(ui->graphicsView);
     ui->graphicsView->setScene(m_scene);
     m_scene->setSceneRect(0, 0, ui->width->value(), ui->height->value());
     QObject::connect(m_scene, &QGraphicsScene::selectionChanged, this, &TouchpadTuner::selectionChanged);
+    QObject::connect(m_scene, &EditScene::onMouseRelease, [this](QGraphicsSceneMouseEvent*)->void
+    {
+        if(!m_current)
+            return;
+        currentSyncFields();
+        currentSyncRaw();
+    });
     initScene();
 }
 
@@ -31,7 +43,8 @@ void TouchpadTuner::initScene()
     for(int i = key_BEGIN; i < key_END; ++i)
     {
         auto &k = touchKeysMapChanged[i];
-        auto *r = m_scene->addRect(k.x1, k.y1, k.x2 - k.x1, k.y2 - k.y1, QPen(Qt::black), QBrush(Qt::green));
+        auto *r = m_scene->addRect(0, 0, k.x2 - k.x1, k.y2 - k.y1, QPen(Qt::black), QBrush(Qt::green));
+        r->setPos(k.x1, k.y1);
         r->setZValue(10);
         r->setFlag(QGraphicsItem::ItemIsMovable, true);
         r->setFlag(QGraphicsItem::ItemIsSelectable, true);
@@ -74,11 +87,11 @@ void TouchpadTuner::currentSyncFields()
     auto rekt = m_current->rect();
 
     ui->itemx->blockSignals(true);
-    ui->itemx->setValue(rekt.x());
+    ui->itemx->setValue(m_current->x());
     ui->itemx->blockSignals(false);
 
     ui->itemy->blockSignals(true);
-    ui->itemy->setValue(rekt.y());
+    ui->itemy->setValue(m_current->y());
     ui->itemy->blockSignals(false);
 
     ui->itemwidth->blockSignals(true);
@@ -99,10 +112,16 @@ void TouchpadTuner::currentSyncRaw()
 {
     if(!m_current)
         return;
-    touchKeysMapChanged[m_current->data(0).toInt()].x1 = qRound(m_current->x());
-    touchKeysMapChanged[m_current->data(0).toInt()].x2 = qRound(m_current->x() + m_current->rect().width());
-    touchKeysMapChanged[m_current->data(0).toInt()].y1 = qRound(m_current->y());
-    touchKeysMapChanged[m_current->data(0).toInt()].y2 = qRound(m_current->y() + m_current->rect().height());
+
+    auto &k = touchKeysMapChanged[m_current->data(0).toInt()];
+    auto r = m_current->rect();
+    k.x1 = qRound(m_current->x());
+    k.y1 = qRound(m_current->y());
+    k.x2 = qRound(m_current->x() + r.width());
+    k.y2 = qRound(m_current->y() + r.height());
+
+    qDebug() << "X1:" << k.x1 << "Y1:" <<k.y1
+             << "X2:" << k.x2 << "Y2:" <<k.y2;
 }
 
 void TouchpadTuner::selectionChanged()
@@ -123,11 +142,11 @@ void TouchpadTuner::selectionChanged()
         m_current = r;
         auto rekt = r->rect();
         ui->itemx->blockSignals(true);
-        ui->itemx->setValue(rekt.x());
+        ui->itemx->setValue(m_current->x());
         ui->itemx->blockSignals(false);
 
         ui->itemy->blockSignals(true);
-        ui->itemy->setValue(rekt.y());
+        ui->itemy->setValue(m_current->y());
         ui->itemy->blockSignals(false);
 
         ui->itemwidth->blockSignals(true);
@@ -151,9 +170,7 @@ void TouchpadTuner::on_itemx_valueChanged(int arg1)
 {
     if(m_current)
     {
-        auto r = m_current->rect();
-        r.moveTo(arg1, r.y());
-        m_current->setRect(r);
+        m_current->setPos(arg1, m_current->y());
         currentSyncRaw();
     }
 }
@@ -162,9 +179,7 @@ void TouchpadTuner::on_itemy_valueChanged(int arg1)
 {
     if(m_current)
     {
-        auto r = m_current->rect();
-        r.moveTo(r.x(), arg1);
-        m_current->setRect(r);
+        m_current->setPos(m_current->x(), arg1);
         currentSyncRaw();
     }
 }
@@ -221,9 +236,7 @@ void TouchpadTuner::on_adjustUp_clicked()
 {
     if(m_current)
     {
-        auto r = m_current->rect();
-        r.moveTo(r.x(), r.y() - 1);
-        m_current->setRect(r);
+        m_current->setPos(m_current->x(), m_current->y() - 1);
         currentSyncFields();
         currentSyncRaw();
     }
@@ -233,9 +246,7 @@ void TouchpadTuner::on_adjustDown_clicked()
 {
     if(m_current)
     {
-        auto r = m_current->rect();
-        r.moveTo(r.x(), r.y() + 1);
-        m_current->setRect(r);
+        m_current->setPos(m_current->x(), m_current->y() + 1);
         currentSyncFields();
         currentSyncRaw();
     }
@@ -245,9 +256,7 @@ void TouchpadTuner::on_adjustLeft_clicked()
 {
     if(m_current)
     {
-        auto r = m_current->rect();
-        r.moveTo(r.x() - 1, r.y());
-        m_current->setRect(r);
+        m_current->setPos(m_current->x() - 1, m_current->y());
         currentSyncFields();
         currentSyncRaw();
     }
@@ -257,9 +266,7 @@ void TouchpadTuner::on_adjustRight_clicked()
 {
     if(m_current)
     {
-        auto r = m_current->rect();
-        r.moveTo(r.x() + 1, r.y());
-        m_current->setRect(r);
+        m_current->setPos(m_current->x() + 1, m_current->y());
         currentSyncFields();
         currentSyncRaw();
     }
@@ -267,10 +274,49 @@ void TouchpadTuner::on_adjustRight_clicked()
 
 void TouchpadTuner::on_save_clicked()
 {
+    QString o = QFileDialog::getSaveFileName(this, tr("Load touchpad settings"), m_lastFile, "Touchpad (*.ptpad);;All (*.*)");
+    if(o.isEmpty())
+        return;
 
+    QSettings f(o, QSettings::IniFormat);
+
+    f.beginGroup("setup");
+    for(int i = key_BEGIN; i < key_END; ++i)
+    {
+        auto &s = touchKeysMapChanged[i];
+        f.setValue(QString("%1-x1").arg(i), s.x1);
+        f.setValue(QString("%1-y1").arg(i), s.y1);
+        f.setValue(QString("%1-x2").arg(i), s.x2);
+        f.setValue(QString("%1-y2").arg(i), s.y2);
+    }
+    f.endGroup();
+
+    f.sync();
+
+    memcpy(&touchKeysMap, &touchKeysMapChanged, sizeof(touchKeysMap));
+    m_lastFile = o;
 }
 
 void TouchpadTuner::on_load_clicked()
 {
+    QString o = QFileDialog::getOpenFileName(this, tr("Load touchpad settings"), m_lastFile, "Touchpad (*.ptpad);;All (*.*)");
+    if(o.isEmpty())
+        return;
 
+    QSettings f(o, QSettings::IniFormat);
+
+    f.beginGroup("setup");
+    for(int i = key_BEGIN; i < key_END; ++i)
+    {
+        auto &s = touchKeysMap[i];
+        s.x1 = f.value(QString("%1-x1").arg(i), 0.f).toFloat();
+        s.y1 = f.value(QString("%1-y1").arg(i), 0.f).toFloat();
+        s.x2 = f.value(QString("%1-x2").arg(i), 0.f).toFloat();
+        s.y2 = f.value(QString("%1-y2").arg(i), 0.f).toFloat();
+        s.cmd = static_cast<commands>(i);
+    }
+    f.endGroup();
+
+    initScene();
+    m_lastFile = o;
 }

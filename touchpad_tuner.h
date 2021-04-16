@@ -9,13 +9,15 @@ namespace Ui { class TouchpadTuner; }
 class QGraphicsRectItem;
 QT_END_NAMESPACE
 
+class EditScene;
 
 class TouchpadTuner : public QMainWindow
 {
     Q_OBJECT
-    QGraphicsScene *m_scene;
+    EditScene *m_scene;
     QGraphicsRectItem *m_back;
     QGraphicsRectItem *m_current = nullptr;
+    QString m_lastFile;
 
     enum commands
     {

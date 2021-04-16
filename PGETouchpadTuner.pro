@@ -9,10 +9,12 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    edit_scene.cpp \
     main.cpp \
     touchpad_tuner.cpp
 
 HEADERS += \
+    edit_scene.h \
     touchpad_tuner.h
 
 FORMS += \

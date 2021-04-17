@@ -315,10 +315,10 @@ void TouchpadTuner::on_save_clicked()
     for(int i = key_BEGIN; i < key_END; ++i)
     {
         auto &s = touchKeysMapChanged[i];
-        f.setValue(QString("%1-x1").arg(i), s.x1);
-        f.setValue(QString("%1-y1").arg(i), s.y1);
-        f.setValue(QString("%1-x2").arg(i), s.x2);
-        f.setValue(QString("%1-y2").arg(i), s.y2);
+        f.setValue(QString("%1-x1").arg(i), qRound(s.x1));
+        f.setValue(QString("%1-y1").arg(i), qRound(s.y1));
+        f.setValue(QString("%1-x2").arg(i), qRound(s.x2));
+        f.setValue(QString("%1-y2").arg(i), qRound(s.y2));
     }
     f.endGroup();
 

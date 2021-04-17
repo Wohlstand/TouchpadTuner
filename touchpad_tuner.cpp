@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QtDebug>
 #include <QGraphicsSceneMouseEvent>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include "edit_scene.h"
 
@@ -58,6 +59,33 @@ void TouchpadTuner::syncSize()
     ui->graphicsView->resize(ui->width->value() + 20, ui->height->value() + 20);
     m_scene->setSceneRect(0, 0, ui->width->value(), ui->height->value());
     m_back->setRect(0, 0, ui->width->value(), ui->height->value());
+}
+
+void TouchpadTuner::keyReleaseEvent(QKeyEvent *k)
+{
+    switch(k->key())
+    {
+    case Qt::Key_Left:
+        on_adjustLeft_clicked();
+        break;
+    case Qt::Key_Right:
+        on_adjustRight_clicked();
+        break;
+    case Qt::Key_Up:
+        on_adjustUp_clicked();
+        break;
+    case Qt::Key_Down:
+        on_adjustDown_clicked();
+        break;
+    case Qt::Key_Plus:
+        on_scaleUp_clicked();
+        break;
+    case Qt::Key_Minus:
+        on_scaleDown_clicked();
+        break;
+    default:
+        break;
+    }
 }
 
 void TouchpadTuner::on_width_valueChanged(int)
@@ -282,6 +310,8 @@ void TouchpadTuner::on_save_clicked()
     QSettings f(o, QSettings::IniFormat);
 
     f.beginGroup("setup");
+    f.setValue("size-width", ui->width->value());
+    f.setValue("size-height", ui->height->value());
     for(int i = key_BEGIN; i < key_END; ++i)
     {
         auto &s = touchKeysMapChanged[i];
@@ -307,6 +337,14 @@ void TouchpadTuner::on_load_clicked()
     QSettings f(o, QSettings::IniFormat);
 
     f.beginGroup("setup");
+
+    ui->width->blockSignals(true);
+    ui->width->setValue(f.value("size-width", 1024).toInt());
+    ui->width->blockSignals(false);
+    ui->height->blockSignals(true);
+    ui->height->setValue(f.value("size-height", 600).toInt());
+    ui->height->blockSignals(false);
+
     for(int i = key_BEGIN; i < key_END; ++i)
     {
         auto &s = touchKeysMap[i];
@@ -354,7 +392,7 @@ void TouchpadTuner::on_exportToCpp_clicked()
     for(int i = key_BEGIN; i < key_END; ++i)
     {
         auto &s = touchKeysMap[i];
-        output += QString("    {%1.0f, %2.0f, %3.0f, %4.0f, %5:%6},\n")
+        output += QString("    {%1.0f, %2.0f, %3.0f, %4.0f, %5::%6},\n")
                 .arg(s.x1)
                 .arg(s.y1)
                 .arg(s.x2)
@@ -366,4 +404,27 @@ void TouchpadTuner::on_exportToCpp_clicked()
     output += "};";
 
     QMessageBox::information(this, "Exported array", output);
+}
+
+void TouchpadTuner::on_actionCopySize_triggered()
+{
+    if(m_current)
+    {
+        auto r = m_current->rect();
+        m_copiedSize[0] = r.width();
+        m_copiedSize[1] = r.height();
+    }
+}
+
+void TouchpadTuner::on_actionPasteSize_triggered()
+{
+    if(m_current && m_copiedSize[0] > 0 && m_copiedSize[1] > 0)
+    {
+        auto r = m_current->rect();
+        r.setWidth(m_copiedSize[0]);
+        r.setHeight(m_copiedSize[1]);
+        m_current->setRect(r);
+        currentSyncFields();
+        currentSyncRaw();
+    }
 }

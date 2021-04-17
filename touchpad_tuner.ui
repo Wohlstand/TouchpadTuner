@@ -226,7 +226,7 @@
    <widget class="QPushButton" name="save">
     <property name="geometry">
      <rect>
-      <x>40</x>
+      <x>120</x>
       <y>50</y>
       <width>80</width>
       <height>23</height>
@@ -239,7 +239,7 @@
    <widget class="QPushButton" name="load">
     <property name="geometry">
      <rect>
-      <x>130</x>
+      <x>30</x>
       <y>50</y>
       <width>80</width>
       <height>23</height>
@@ -272,8 +272,32 @@
      <height>20</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>Правка</string>
+    </property>
+    <addaction name="actionCopySize"/>
+    <addaction name="actionPasteSize"/>
+   </widget>
+   <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionCopySize">
+   <property name="text">
+    <string>Копировать размер</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionPasteSize">
+   <property name="text">
+    <string>Вставить размер</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

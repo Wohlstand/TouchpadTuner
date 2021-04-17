@@ -19,6 +19,8 @@ class TouchpadTuner : public QMainWindow
     QGraphicsRectItem *m_current = nullptr;
     QString m_lastFile;
 
+    int m_copiedSize[2] = {-1, -1};
+
     enum commands
     {
         key_BEGIN = 0,
@@ -80,6 +82,9 @@ public:
     void initScene();
     void syncSize();
 
+protected:
+    virtual void keyReleaseEvent(QKeyEvent *k);
+
 private slots:
     void on_width_valueChanged(int arg1);
     void on_height_valueChanged(int arg1);
@@ -107,6 +112,10 @@ private slots:
     void on_load_clicked();
 
     void on_exportToCpp_clicked();
+
+    void on_actionCopySize_triggered();
+
+    void on_actionPasteSize_triggered();
 
 private:
     Ui::TouchpadTuner *ui;
